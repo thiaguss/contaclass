@@ -78,6 +78,8 @@ def test_classify_status():
     engine = ScoreEngine()
     assert engine.classify_status(100.0) == "confirmed"
     assert engine.classify_status(85.0) == "review"
+    assert engine.classify_status(65.0) == "review"
+    assert engine.classify_status(50.0) == "review"
     assert engine.classify_status(49.0) == "not_found"
 
 
@@ -85,6 +87,8 @@ def test_classify_color():
     engine = ScoreEngine()
     assert engine.classify_color(100.0) == "#C6EFCE"
     assert engine.classify_color(80.0) == "#FFEB9C"
+    assert engine.classify_color(50.0) == "#FFEB9C"
+    assert engine.classify_color(49.0) == "#FFC7CE"
     assert engine.classify_color(30.0) == "#FFC7CE"
 
 

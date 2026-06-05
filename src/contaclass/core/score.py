@@ -73,20 +73,20 @@ class ScoreEngine:
     def classify_status(self, final_score: float) -> str:
         if final_score >= 100.0:
             return "confirmed"
-        if final_score >= 70.0:
+        if final_score >= 50.0:
             return "review"
         return "not_found"
 
     def classify_color(self, final_score: float) -> str:
         if final_score >= 100.0:
             return "#C6EFCE"
-        if final_score >= 70.0:
+        if final_score >= 50.0:
             return "#FFEB9C"
         return "#FFC7CE"
 
     def classify_text_color(self, final_score: float) -> str:
         if final_score >= 100.0:
             return "#276221"
-        if final_score >= 70.0:
+        if final_score >= 50.0:
             return "#9C6500"
         return "#9C0006"

@@ -8,8 +8,10 @@ DEFAULT_PREFIXES = [
 ]
 
 DEFAULT_SUFFIXES = [
-    "S.A.", "SA", "LTDA", "EIRELI", "ME", "EPP",
+    "S.A.", "S.A", "SA", "LTDA", "EIRELI", "ME", "EPP",
     "S/A", "CIA", "INDUSTRIA", "COMERCIO",
+    "LIMITADA", "DISTRIBUIDORA", "COMBUSTIVEIS",
+    "INTERNET", "GRAFICA",
 ]
 
 DEFAULT_REMOVE_TERMS = ["CNPJ", "CPF"]
@@ -45,9 +47,10 @@ class Normalizer:
         for suffix in self.suffixes:
             escaped = re.escape(suffix)
             pattern = re.compile(
-                rf'(?:^|\s){escaped}\.?(\s|$)', re.IGNORECASE
+                rf'\s{escaped}\.?(\s|$)', re.IGNORECASE
             )
-            result = pattern.sub(' ', result)
+            result = pattern.sub(r'\1', result)
+        result = result.strip()
 
         changed = True
         while changed:
@@ -56,7 +59,7 @@ class Normalizer:
                 upper_result = result.upper()
                 upper_prefix = prefix.upper()
                 if upper_result.startswith(upper_prefix):
-                    rest = result[len(prefix):].lstrip()
+                    rest = result[len(upper_prefix):].lstrip()
                     if not rest or rest[0] in '-\u2013\u2014':
                         rest = rest.lstrip('-\u2013\u2014\u2015').strip()
                     result = rest

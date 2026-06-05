@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 from pathlib import Path
 
 import openpyxl
@@ -150,3 +151,20 @@ def test_empty_sheet_skipped(tmp_path):
     reader = ExcelReader(path)
     entries = reader.read_new()
     assert len(entries) == 0
+
+
+def test_parse_br_amount():
+    reader = ExcelReader("dummy.xlsx")
+    assert reader._parse_amount("1.500,00") == Decimal("1500.00")
+    assert reader._parse_amount("1500,00") == Decimal("1500.00")
+    assert reader._parse_amount("1.000.000,00") == Decimal("1000000.00")
+    assert reader._parse_amount("0,00") == Decimal("0.00")
+    assert reader._parse_amount("R$ 1.500,00") == Decimal("1500.00")
+    assert reader._parse_amount("(1.500,00)") == Decimal("-1500.00")
+    assert reader._parse_amount("-1500,00") == Decimal("-1500.00")
+
+
+def test_parse_br_amount_float():
+    reader = ExcelReader("dummy.xlsx")
+    assert reader._parse_amount(1500.50) == Decimal("1500.50")
+    assert reader._parse_amount(1500) == Decimal("1500.00")

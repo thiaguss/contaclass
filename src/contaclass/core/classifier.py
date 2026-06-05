@@ -33,7 +33,10 @@ class Classifier:
 
     def build_index(self, historical_entries: list[HistoricalEntry]) -> SupplierIndex:
         idx = SupplierIndex()
-        idx.add_entries(historical_entries)
+        for entry in historical_entries:
+            if not entry.normalized_supplier:
+                entry.normalized_supplier = self.normalizer.normalize(entry.raw_supplier)
+            idx.add_entry(entry)
         self._index = idx
         self._exact_matcher = ExactMatcher(idx)
         return idx
@@ -90,17 +93,11 @@ class Classifier:
                     result.debit_code = best_pair[0]
                     result.credit_code = best_pair[1]
 
-                result.matched_supplier = best["name"]
-                result.matched_supplier_normalized = best["name"]
-
+            result.matched_supplier = best["name"]
+            result.matched_supplier_normalized = best["name"]
             result.confidence_score = final_score
             result.status = self.score_engine.classify_status(final_score)
             result.match_type = "fuzzy"
-
-            if final_score < self.threshold:
-                result.debit_code = None
-                result.credit_code = None
-                result.status = "not_found"
 
             return result
 

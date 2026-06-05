@@ -260,6 +260,11 @@ class ExcelReader:
             return Decimal(str(value)).quantize(Decimal("0.01"))
         if isinstance(value, str):
             cleaned = value.strip().replace("R$", "").replace(" ", "")
-            cleaned = cleaned.replace(".", "").replace(",", ".")
+            cleaned = cleaned.replace("(", "-").replace(")", "").replace(" ", "")
+            has_br_decimal = "," in cleaned
+            if has_br_decimal:
+                cleaned = cleaned.replace(".", "").replace(",", ".")
+            else:
+                cleaned = cleaned.replace(",", "")
             return Decimal(cleaned).quantize(Decimal("0.01"))
         raise ValueError(f"Não foi possível interpretar o valor: {value}")

@@ -131,3 +131,49 @@ def test_raw_name_case_variations():
     n = Normalizer()
     assert n.normalize("vivo empresa ltda") == "VIVO EMPRESA"
     assert n.normalize("Vivo Empresa Ltda") == "VIVO EMPRESA"
+
+
+def test_suffix_limited():
+    n = Normalizer()
+    assert n.normalize("EMPRESA EXEMPLO LIMITADA") == "EMPRESA EXEMPLO"
+
+
+def test_suffix_distribuidora():
+    n = Normalizer()
+    assert n.normalize("EQUATORIAL ALAGOAS DISTRIBUIDORA") == "EQUATORIAL ALAGOAS"
+
+
+def test_suffix_combustiveis():
+    n = Normalizer()
+    assert n.normalize("POSTO ALFA COMBUSTIVEIS") == "POSTO ALFA"
+
+
+def test_suffix_internet():
+    n = Normalizer()
+    assert n.normalize("GOOGLE BRASIL INTERNET LIMITADA") == "GOOGLE BRASIL"
+
+
+def test_suffix_grafica():
+    n = Normalizer()
+    assert n.normalize("KALUNGA COMERCIO E INDUSTRIA GRAFICA") == "KALUNGA E"
+
+
+def test_cia_not_removed_at_start():
+    n = Normalizer()
+    assert n.normalize("CIA DE SANEAMENTO BASICO") == "CIA DE SANEAMENTO BASICO"
+
+
+def test_sa_without_trailing_dot():
+    n = Normalizer()
+    assert n.normalize("TELEFONICA BRASIL S.A") == "TELEFONICA BRASIL"
+
+
+def test_brk_ambiental_sa():
+    n = Normalizer()
+    assert n.normalize("BRK AMBIENTAL S.A.") == "BRK AMBIENTAL"
+
+
+def test_prefix_lowercase_slice():
+    n = Normalizer()
+    assert n.normalize("pix - VIVO EMPRESAS") == "VIVO EMPRESAS"
+    assert n.normalize("ted - BANCO DO BRASIL") == "BANCO DO BRASIL"

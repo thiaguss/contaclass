@@ -136,3 +136,26 @@ def test_classify_single_entry():
     entry = classifier.classify_entry(_nentry("VIVO"), classifier.index.known_suppliers)
     assert entry.status == "confirmed"
     assert entry.confidence_score == 100.0
+
+
+def test_build_index_normalizes_empty_supplier():
+    entry = HistoricalEntry(
+        tab_name="default", entry_date=date(2026, 1, 1),
+        raw_supplier="VIVO S.A.", normalized_supplier="",
+        debit_code="503", credit_code="101", amount=Decimal("100.00"),
+    )
+    classifier = Classifier()
+    classifier.build_index([entry])
+    assert classifier.index.has_supplier("VIVO")
+
+
+def test_fuzzy_match_sets_matched_supplier_below_threshold():
+    classifier = Classifier(threshold=90.0)
+    classifier.build_index([
+        _ventry("TELEFONICA BRASIL", "503", "101"),
+    ])
+    entry = _nentry("TELEFONICA")
+    result = classifier.classify_entry(entry, classifier.index.known_suppliers)
+    assert result.status == "review"
+    assert result.matched_supplier is not None
+    assert result.debit_code is None
