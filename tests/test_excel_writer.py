@@ -100,7 +100,7 @@ def test_confirmed_row_green(tmp_path, sample_batch):
 
     wb = openpyxl.load_workbook(output)
     ws = wb["Classificação"]
-    cell = ws.cell(row=2, column=3)
+    cell = ws.cell(row=2, column=7)
     assert cell.value == "VIVO"
     wb.close()
 
@@ -112,7 +112,7 @@ def test_review_row_yellow(tmp_path, sample_batch):
 
     wb = openpyxl.load_workbook(output)
     ws = wb["Classificação"]
-    cell = ws.cell(row=3, column=3)
+    cell = ws.cell(row=3, column=7)
     assert cell.value == "TELEFONICA BRASIL"
     wb.close()
 
@@ -124,7 +124,7 @@ def test_not_found_row_red(tmp_path, sample_batch):
 
     wb = openpyxl.load_workbook(output)
     ws = wb["Classificação"]
-    cell = ws.cell(row=4, column=3)
+    cell = ws.cell(row=4, column=7)
     assert cell.value == "EMPRESA NOVA XYZ"
     wb.close()
 
@@ -192,6 +192,7 @@ def test_extra_columns_present_in_header(tmp_path, batch_with_extra_fields):
     wb = openpyxl.load_workbook(output)
     ws = wb["Classificação"]
     headers = [ws.cell(row=1, column=c).value for c in range(1, 14)]
+    assert len(headers) == 13
     assert "Cód Histórico" in headers
     assert "Matriz/Filial" in headers
     assert "Inicia Lote" in headers
@@ -205,9 +206,9 @@ def test_extra_columns_values_preserved(tmp_path, batch_with_extra_fields):
 
     wb = openpyxl.load_workbook(output)
     ws = wb["Classificação"]
-    assert ws.cell(row=2, column=7).value == "H001"
-    assert ws.cell(row=2, column=8).value == "1"
-    assert ws.cell(row=2, column=9).value == "S"
+    assert ws.cell(row=2, column=6).value == "H001"
+    assert ws.cell(row=2, column=8).value == "S"
+    assert ws.cell(row=2, column=9).value == "1"
     wb.close()
 
 
@@ -218,7 +219,7 @@ def test_extra_columns_empty_when_not_provided(tmp_path, sample_batch):
 
     wb = openpyxl.load_workbook(output)
     ws = wb["Classificação"]
-    assert ws.cell(row=2, column=7).value is None
+    assert ws.cell(row=2, column=6).value is None
     assert ws.cell(row=2, column=8).value is None
     assert ws.cell(row=2, column=9).value is None
     wb.close()
