@@ -152,3 +152,73 @@ def test_multiple_writes_different_files(tmp_path, sample_batch):
     writer.write(sample_batch, out2)
     assert out1.exists()
     assert out2.exists()
+
+
+@pytest.fixture
+def batch_with_extra_fields():
+    batch = ProcessingBatchResult()
+    batch.total_entries = 1
+    batch.processing_time_ms = 500
+    batch.entries = [
+        MatchResult(
+            row_number=1,
+            entry_date=date(2026, 6, 1),
+            raw_supplier="VIVO",
+            normalized_supplier="VIVO",
+            amount=Decimal("1500.00"),
+            debit_code="503",
+            credit_code="101",
+            confidence_score=100.0,
+            status="confirmed",
+            match_type="exact",
+            matched_supplier="VIVO",
+            matched_supplier_normalized="VIVO",
+            codigo_historico="H001",
+            codigo_matriz_filial="1",
+            inicia_lote="S",
+        ),
+    ]
+    batch.confirmed_count = 1
+    batch.review_count = 0
+    batch.not_found_count = 0
+    return batch
+
+
+def test_extra_columns_present_in_header(tmp_path, batch_with_extra_fields):
+    output = tmp_path / "extra.xlsx"
+    writer = ExcelWriter()
+    writer.write(batch_with_extra_fields, output)
+
+    wb = openpyxl.load_workbook(output)
+    ws = wb["Classificação"]
+    headers = [ws.cell(row=1, column=c).value for c in range(1, 14)]
+    assert "Cód Histórico" in headers
+    assert "Matriz/Filial" in headers
+    assert "Inicia Lote" in headers
+    wb.close()
+
+
+def test_extra_columns_values_preserved(tmp_path, batch_with_extra_fields):
+    output = tmp_path / "extra.xlsx"
+    writer = ExcelWriter()
+    writer.write(batch_with_extra_fields, output)
+
+    wb = openpyxl.load_workbook(output)
+    ws = wb["Classificação"]
+    assert ws.cell(row=2, column=7).value == "H001"
+    assert ws.cell(row=2, column=8).value == "1"
+    assert ws.cell(row=2, column=9).value == "S"
+    wb.close()
+
+
+def test_extra_columns_empty_when_not_provided(tmp_path, sample_batch):
+    output = tmp_path / "sem_extra.xlsx"
+    writer = ExcelWriter()
+    writer.write(sample_batch, output)
+
+    wb = openpyxl.load_workbook(output)
+    ws = wb["Classificação"]
+    assert ws.cell(row=2, column=7).value is None
+    assert ws.cell(row=2, column=8).value is None
+    assert ws.cell(row=2, column=9).value is None
+    wb.close()

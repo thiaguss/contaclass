@@ -55,6 +55,9 @@ class Classifier:
             raw_supplier=entry.raw_supplier,
             normalized_supplier=normalized,
             amount=entry.amount,
+            codigo_historico=entry.codigo_historico,
+            codigo_matriz_filial=entry.codigo_matriz_filial,
+            inicia_lote=entry.inicia_lote,
         )
 
         if not normalized:

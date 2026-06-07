@@ -18,6 +18,10 @@ COLUMN_ALIASES = {
     "codigo debito": "debit_code",
     "código débito": "debit_code",
     "codigo débito": "debit_code",
+    "cód conta débito": "debit_code",
+    "cod conta debito": "debit_code",
+    "código conta débito": "debit_code",
+    "codigo conta debito": "debit_code",
     "debito": "debit_code",
     "débito": "debit_code",
     "cd": "debit_code",
@@ -26,6 +30,10 @@ COLUMN_ALIASES = {
     "codigo credito": "credit_code",
     "código crédito": "credit_code",
     "codigo crédito": "credit_code",
+    "cód conta credito": "credit_code",
+    "cod conta credito": "credit_code",
+    "código conta crédito": "credit_code",
+    "codigo conta credito": "credit_code",
     "credito": "credit_code",
     "crédito": "credit_code",
     "cc": "credit_code",
@@ -44,7 +52,35 @@ COLUMN_ALIASES = {
     "nome": "supplier",
     "historico": "supplier",
     "histórico": "supplier",
+    "complemento histórico": "supplier",
+    "complemento historico": "supplier",
+    "compl histórico": "supplier",
+    "compl historico": "supplier",
+    "códhistórico": "codigo_historico",
+    "codhistorico": "codigo_historico",
+    "código histórico": "codigo_historico",
+    "codigo historico": "codigo_historico",
+    "código matriz/filial": "codigo_matriz_filial",
+    "codigo matriz/filial": "codigo_matriz_filial",
+    "cod matriz/filial": "codigo_matriz_filial",
+    "inicia lote": "inicia_lote",
 }
+
+HISTORICAL_FIELD_ORDER = [
+    "entry_date", "debit_code", "credit_code", "amount",
+    "codigo_historico", "supplier", "inicia_lote", "codigo_matriz_filial",
+]
+
+FIXED_SCHEMA_KEYWORDS = [
+    ["data", "date", "dt", "lançamento", "lancamento"],
+    ["débito", "debito", "cod conta", "cód conta"],
+    ["crédito", "credito", "cod conta", "cód conta"],
+    ["valor", "value", "val", "vlr"],
+    ["histórico", "historico", "codhist"],
+    ["complemento", "fornecedor", "favorecido", "beneficiário", "beneficiario", "descricao", "descrição"],
+    ["inicia", "lote"],
+    ["matriz", "filial"],
+]
 
 
 class ColumnDetectionError(Exception):
@@ -107,6 +143,18 @@ class ExcelReader:
                 if credit in ("nan", "None"):
                     credit = ""
 
+                codigo_historico = str(row.get(mapping.get("codigo_historico", ""), "")).strip()
+                if codigo_historico in ("nan", "None", ""):
+                    codigo_historico = None
+
+                codigo_matriz_filial = str(row.get(mapping.get("codigo_matriz_filial", ""), "")).strip()
+                if codigo_matriz_filial in ("nan", "None", ""):
+                    codigo_matriz_filial = None
+
+                inicia_lote = str(row.get(mapping.get("inicia_lote", ""), "")).strip()
+                if inicia_lote in ("nan", "None", ""):
+                    inicia_lote = None
+
                 entries.append(HistoricalEntry(
                     tab_name=sheet_name,
                     entry_date=entry_date,
@@ -116,6 +164,9 @@ class ExcelReader:
                     credit_code=credit,
                     amount=amount,
                     row_number=len(entries) + 1,
+                    codigo_historico=codigo_historico,
+                    codigo_matriz_filial=codigo_matriz_filial,
+                    inicia_lote=inicia_lote,
                 ))
 
         xls.close()
@@ -153,11 +204,26 @@ class ExcelReader:
                 if not raw_supplier or raw_supplier in ("nan", "None", ""):
                     continue
 
+                codigo_historico = str(row.get(mapping.get("codigo_historico", ""), "")).strip()
+                if codigo_historico in ("nan", "None", ""):
+                    codigo_historico = None
+
+                codigo_matriz_filial = str(row.get(mapping.get("codigo_matriz_filial", ""), "")).strip()
+                if codigo_matriz_filial in ("nan", "None", ""):
+                    codigo_matriz_filial = None
+
+                inicia_lote = str(row.get(mapping.get("inicia_lote", ""), "")).strip()
+                if inicia_lote in ("nan", "None", ""):
+                    inicia_lote = None
+
                 all_entries.append(NewEntry(
                     row_number=len(all_entries) + 1,
                     entry_date=entry_date,
                     raw_supplier=raw_supplier,
                     amount=amount,
+                    codigo_historico=codigo_historico,
+                    codigo_matriz_filial=codigo_matriz_filial,
+                    inicia_lote=inicia_lote,
                 ))
 
         xls.close()
@@ -175,11 +241,31 @@ class ExcelReader:
             })
         return preview
 
+    def _detect_by_fixed_schema(self, columns: list[str]) -> dict[str, str] | None:
+        if len(columns) < 8:
+            return None
+
+        clean_cols = [c.strip().lower() for c in columns[:8]]
+        matches = 0
+        for idx, keywords in enumerate(FIXED_SCHEMA_KEYWORDS):
+            col = clean_cols[idx]
+            if any(kw in col for kw in keywords):
+                matches += 1
+
+        if matches < 6:
+            return None
+
+        return dict(zip(HISTORICAL_FIELD_ORDER, columns[:8]))
+
     def _detect_columns(
         self, columns: list[str], manual_map: dict[str, str] | None = None
     ) -> dict[str, str]:
         if manual_map:
             return manual_map
+
+        fixed = self._detect_by_fixed_schema(columns)
+        if fixed:
+            return fixed
 
         result: dict[str, str | None] = {
             "entry_date": None,
@@ -207,6 +293,10 @@ class ExcelReader:
         if manual_map:
             return manual_map
 
+        fixed = self._detect_by_fixed_schema(columns)
+        if fixed:
+            return fixed
+
         result: dict[str, str | None] = {
             "entry_date": None,
             "amount": None,
@@ -228,13 +318,15 @@ class ExcelReader:
 
     def _infer_by_position(self, columns: list[str], current: dict) -> dict:
         inferred = dict(current)
-        for key, val in current.items():
-            if val is not None:
+        order = ["entry_date", "debit_code", "credit_code", "amount", "supplier",
+                 "codigo_historico", "inicia_lote", "codigo_matriz_filial"]
+        pos = 0
+        for key in order:
+            if key not in inferred or inferred[key] is not None:
                 continue
-
-            idx = 0 if key == "entry_date" else (1 if key == "amount" else (2 if key == "supplier" else 3))
-            if idx < len(columns):
-                inferred[key] = columns[idx]
+            if pos < len(columns):
+                inferred[key] = columns[pos]
+                pos += 1
 
         return inferred
 

@@ -159,3 +159,27 @@ def test_fuzzy_match_sets_matched_supplier_below_threshold():
     assert result.status == "review"
     assert result.matched_supplier is not None
     assert result.debit_code is None
+
+
+def test_extra_fields_propagated_from_new_entry_to_result():
+    from datetime import date
+    from decimal import Decimal
+    from contaclass.models.entry import NewEntry
+
+    classifier = Classifier(threshold=50.0)
+    classifier.build_index([
+        _ventry("VIVO", "503", "101"),
+    ])
+    entry = NewEntry(
+        row_number=1,
+        entry_date=date(2026, 2, 1),
+        raw_supplier="VIVO",
+        amount=Decimal("100.00"),
+        codigo_historico="H001",
+        codigo_matriz_filial="1",
+        inicia_lote="S",
+    )
+    result = classifier.classify_entry(entry, classifier.index.known_suppliers)
+    assert result.codigo_historico == "H001"
+    assert result.codigo_matriz_filial == "1"
+    assert result.inicia_lote == "S"

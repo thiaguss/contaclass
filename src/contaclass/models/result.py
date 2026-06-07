@@ -18,6 +18,9 @@ class MatchResult:
     matched_supplier: str | None = None
     matched_supplier_normalized: str | None = None
     is_corrected: bool = False
+    codigo_historico: str | None = None
+    codigo_matriz_filial: str | None = None
+    inicia_lote: str | None = None
 
 
 @dataclass
